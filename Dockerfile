@@ -20,7 +20,6 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=builder /app/public /app/public
 
 EXPOSE 4444
 
