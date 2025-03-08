@@ -2,6 +2,7 @@ package handler
 
 import (
 	"kroff/pkg/models"
+	"kroff/utils/helper"
 	"kroff/utils/response"
 	"net/http"
 	"strconv"
@@ -134,4 +135,59 @@ func (h *Handler) deleteProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.BaseResponse{Message: "Product deleted successfully"})
+}
+
+type getProductsPublicResponse struct {
+	Data       []models.ProductPublic `json:"data"`
+	Pagination models.Pagination      `json:"pagination"`
+}
+
+// @Summary Get all products public
+// @Description Get all products public
+// @Tags products
+// @Produce json
+// @Param categoryId query string false "Category ID"
+// @Param page query int true "page" default(1)
+// @Param limit query int true "page limit" default(10)
+// @Param Accept-Language header string false "Accept-Language" Enums(uz, ru)
+// @Success 200 {object} getProductsPublicResponse
+// @Failure 400,500 {object} response.BaseResponse
+// @Router /api/v1/products [get]
+func (h *Handler) getProductsPublic(c *gin.Context) {
+	pagination, err := helper.ListPagination(c)
+	if err != nil {
+		response.ErrorResponse(c, http.StatusBadRequest, err)
+		return
+	}
+
+	filters := make(map[string]any)
+
+	categoryId := c.Query("categoryId")
+	if categoryId != "" {
+		categoryIdInt, err := strconv.ParseInt(categoryId, 10, 64)
+		if err != nil {
+			response.ErrorResponse(c, http.StatusBadRequest, err)
+			return
+		}
+		filters["category_id"] = categoryIdInt
+	}
+
+	options := models.FilterOptions{
+		Filters: filters,
+		Limit:   pagination.Limit,
+		Page:    pagination.Page,
+	}
+
+	products, totalCount, err := h.services.Product.GetAllProductsPublic(c.GetHeader("Accept-Language"), options)
+	if err != nil {
+		response.FromError(c, err)
+		return
+	}
+
+	helper.UpdatePagination(&pagination, totalCount)
+
+	c.JSON(http.StatusOK, getProductsPublicResponse{
+		Data:       products,
+		Pagination: pagination,
+	})
 }

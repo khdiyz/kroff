@@ -50,4 +50,5 @@ type Product interface {
 	GetProductByID(id int64) (models.Product, error)
 	UpdateProduct(product models.UpdateProduct) error
 	DeleteProduct(id int64) error
+	GetAllProductsPublic(lang string, options models.FilterOptions) ([]models.ProductPublic, int, error)
 }

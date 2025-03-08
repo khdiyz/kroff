@@ -2,8 +2,10 @@ package repository
 
 import (
 	"encoding/json"
+	"fmt"
 	"kroff/pkg/models"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -140,4 +142,74 @@ func (r *ProductPostgres) GetAllProductsCount() (int64, error) {
 	}
 
 	return count, nil
+}
+
+func (r *ProductPostgres) GetAllProductsPublic(lang string, options models.FilterOptions) ([]models.ProductPublic, int, error) {
+	products := []models.ProductPublic{}
+
+	query := sq.Select("id", "category_id", "name->>"+fmt.Sprintf("'%s'", lang)+" as name", "code", "price", "photo").
+		From("products").
+		Where(sq.Expr("true"))
+
+	countQuery := sq.Select("count(id)").From("products").Where(sq.Expr("true"))
+
+	filters := options.Filters
+
+	if categoryId, ok := filters["category_id"]; ok {
+		if categoryId.(int64) != 0 {
+			query = query.Where(sq.Eq{"category_id": categoryId})
+			countQuery = countQuery.Where(sq.Eq{"category_id": categoryId})
+		}
+	}
+
+	if options.SortBy != "" {
+		order := "ASC"
+		if options.Order == "desc" {
+			order = "DESC"
+		}
+		query = query.OrderBy(fmt.Sprintf("%s %s", options.SortBy, order))
+	} else {
+		query = query.OrderBy("created_at DESC") // Default sorting
+	}
+
+	if options.Limit > 0 {
+		offset := (options.Page - 1) * options.Limit
+		query = query.Limit(uint64(options.Limit)).Offset(uint64(offset))
+	}
+
+	sqlQuery, args, err := query.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	fmt.Println(sqlQuery, args)
+
+	rows, err := r.db.Queryx(sqlQuery, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var product models.ProductPublic
+		err := rows.Scan(&product.ID, &product.CategoryId, &product.Name, &product.Code, &product.Price, &product.Photo)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		products = append(products, product)
+	}
+
+	countSql, countArgs, err := countQuery.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var totalCount int
+	err = r.db.Get(&totalCount, countSql, countArgs...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return products, totalCount, nil
 }

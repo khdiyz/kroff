@@ -27,6 +27,7 @@ type Product interface {
 	UpdateProduct(product models.UpdateProduct) error
 	DeleteProduct(id int64) error
 	GetAllProductsCount() (int64, error)
+	GetAllProductsPublic(lang string, options models.FilterOptions) ([]models.ProductPublic, int, error)
 }
 
 func NewRepository(db *sqlx.DB) *Repository {

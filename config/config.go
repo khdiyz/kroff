@@ -9,6 +9,11 @@ import (
 	"github.com/spf13/cast"
 )
 
+const (
+	DefaultLimit = "10"
+	DefaultPage  = "1"
+)
+
 var (
 	instance *Config
 	once     sync.Once

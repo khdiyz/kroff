@@ -1,4 +1,13 @@
 definitions:
+  handler.getProductsPublicResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.ProductPublic'
+        type: array
+      pagination:
+        $ref: '#/definitions/models.Pagination'
+    type: object
   handler.loginResponse:
     properties:
       token:
@@ -63,6 +72,19 @@ definitions:
       uz:
         type: string
     type: object
+  models.Pagination:
+    properties:
+      limit:
+        default: 10
+        type: integer
+      page:
+        default: 1
+        type: integer
+      pageCount:
+        type: integer
+      totalCount:
+        type: integer
+    type: object
   models.Product:
     properties:
       category_id:
@@ -73,6 +95,21 @@ definitions:
         type: integer
       name:
         $ref: '#/definitions/models.NameTranslation'
+      photo:
+        type: string
+      price:
+        type: integer
+    type: object
+  models.ProductPublic:
+    properties:
+      category_id:
+        type: integer
+      code:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
       photo:
         type: string
       price:
@@ -535,6 +572,51 @@ paths:
       summary: Get all categories public
       tags:
       - Category
+  /api/v1/products:
+    get:
+      description: Get all products public
+      parameters:
+      - description: Category ID
+        in: query
+        name: categoryId
+        type: string
+      - default: 1
+        description: page
+        in: query
+        name: page
+        required: true
+        type: integer
+      - default: 10
+        description: page limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - description: Accept-Language
+        enum:
+        - uz
+        - ru
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.getProductsPublicResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      summary: Get all products public
+      tags:
+      - products
 securityDefinitions:
   ApiKeyAuth:
     in: header

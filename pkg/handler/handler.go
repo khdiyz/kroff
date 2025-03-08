@@ -61,6 +61,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		{
 			category.GET("", h.getCategoriesPublic)
 		}
+
+		product := v1.Group("/products")
+		{
+			product.GET("", h.getProductsPublic)
+		}
 	}
 
 	return router
